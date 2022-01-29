@@ -32,6 +32,8 @@ contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enu
     // Token symbol
     string private _symbol;
 
+    string public baseURI_ = "ggggg/";
+
     uint256 public maxMintAmount = 10;
 
     uint public maxSupply=10000;
@@ -82,6 +84,8 @@ contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enu
         require(index < balanceOf(owner), "ERC721Enumerable: owner index out of bounds");
         return _ownedTokens[owner][index];
     }
+
+   
 
     /**
      * @dev See {IERC721Enumerable-totalSupply}.
@@ -261,7 +265,7 @@ contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enu
      * by default, can be overridden in child contracts.
      */
     function _baseURI() internal view virtual returns (string memory) {
-        return "";
+        return baseURI_;
     }
 
     /**
@@ -474,6 +478,34 @@ contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enu
             _safeMint(_to, newTokenID);
             _tokenIds.increment();
         }
+    }
+
+      function setCost(uint256 _newCost) public onlyOwner {
+        cost = _newCost;
+    }
+
+    // set or update max number of mint per mint call
+    function setmaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
+        maxMintAmount = _newmaxMintAmount;
+    }
+
+   
+
+    function setBaseURI(string memory _newBaseURI) public onlyOwner {
+        baseURI_ = _newBaseURI;
+    }
+
+    function walletofNFT(address _owner)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        uint256 ownerTokenCount = balanceOf(_owner);
+        uint256[] memory tokenIds = new uint256[](ownerTokenCount);
+        for (uint256 i; i < ownerTokenCount; i++) {
+            tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
+        }
+        return tokenIds;
     }
 
 
