@@ -19,7 +19,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable {
+contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable {
     using Address for address;
     using Strings for uint256; 
     using Counters for Counters.Counter;
@@ -32,13 +32,16 @@ contract Genie  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enu
     // Token symbol
     string private _symbol;
 
-    string public baseURI_ = "ggggg/";
+    
+   
+
+    string public baseURI_ = "ipfs://Qmeq32eNkU28peHL7JiRMmx7U8jdgHB6ekxwLWy1eLotC8/";
 
     uint256 public maxMintAmount = 10;
 
     uint public maxSupply=10000;
 
-    uint256 public cost = 0.3 ether;
+    uint256 public cost = 0.03 ether;
 
     Counters.Counter private _tokenIds;
 
