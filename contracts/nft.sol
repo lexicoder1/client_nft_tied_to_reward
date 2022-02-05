@@ -44,16 +44,19 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
     uint public maxSupply=10000;
 
-    uint256 public cost = 0.03 ether;
+    uint256 public cost = 0.3 ether;
 
     Counters.Counter private _tokenIds;
     mapping(bytes32 => address) public requestIdToAddress;
-   
+    mapping(bytes32 => uint) public trackIdNftId; 
+     mapping(address => mapping(uint  => uint)) trackIdNftIdrandomnum ;
+
     IERC20  _IERC20=IERC20(0x01BE23585060835E02B77ef475b0Cc51aA1e0709 );
     bytes32 internal keyHash;  
     uint256 internal fee;
     
     uint256 public randomResult;
+
 
    
 
@@ -532,10 +535,11 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     }
 
 
-    function getRandomNumber() internal returns (bytes32 requestId) {
+    function getRandomNumber(uint nftId) internal returns (bytes32 requestId) {
         require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
          bytes32 requestId =  requestRandomness(keyHash, fee);
         requestIdToAddress[requestId] = msg.sender;
+         trackIdNftId[requestId ]=nftId;
     }
 
     /**
@@ -550,13 +554,13 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
     function _getrandom(uint randomness,bytes32 requestId )internal returns(bool){
        uint check=  (randomness %10000) + 1;
-     fg= requestIdToAddress[requestId];  
+      
        if (counter<=1){
            if (check<=300){
             claimedwishes.push(check);
            }
            
-          randomResult = (randomness %10000) + 1;  
+          trackIdNftIdrandomnum[requestIdToAddress[requestId]][trackIdNftId[requestId ]] = (randomness %10000) + 1;  
                
        }
 
@@ -567,7 +571,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
           
      
         
-        getRandomNumber() ; 
+        getRandomNumber( trackIdNftId[requestId ]) ; 
           return true;
 
          }
@@ -577,7 +581,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
      
 
          }
-         randomResult = (randomness %10000) + 1; 
+          trackIdNftIdrandomnum[requestIdToAddress[requestId]][trackIdNftId[requestId ]] = (randomness %10000) + 1; 
           if (check<=300){
             claimedwishes.push(check);
            }
@@ -594,17 +598,23 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     
     }
 
-    function get()public {
+    // function get()public {
 
-      getRandomNumber();
-    }
+    //   getRandomNumber();
+    // }
 
     function redeemLastWish(uint  nftId)public {
 
         require(ownerOf(nftId)==msg.sender , "not owner");
-
-        getRandomNumber();
+         _burn(nftId);
+         getRandomNumber(nftId);
     }
+  
+  function checkredeemedId(uint nftId)public view returns(uint){
+       
+       return trackIdNftIdrandomnum[msg.sender][nftId];
+  }
+    
 
     
 
