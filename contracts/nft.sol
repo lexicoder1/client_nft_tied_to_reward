@@ -13,8 +13,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/VRFConsumerBase.sol";
-import "./erc20interface.sol";  
+// import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/VRFConsumerBase.sol";
+ 
 
 
 /**
@@ -22,7 +22,7 @@ import "./erc20interface.sol";
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable, VRFConsumerBase {
+contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable {
     using Address for address;
     using Strings for uint256; 
     using Counters for Counters.Counter;
@@ -47,21 +47,16 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     uint256 public cost = 0.3 ether;
 
     Counters.Counter private _tokenIds;
-    mapping(bytes32 => address) public requestIdToAddress;
-    mapping(bytes32 => uint) public trackIdNftId; 
-     mapping(address => mapping(uint  => uint)) trackIdNftIdrandomnum ;
+   
+    uint[] redeemednums;
 
-    IERC20  _IERC20=IERC20(0x01BE23585060835E02B77ef475b0Cc51aA1e0709 );
-    bytes32 internal keyHash;  
-    uint256 internal fee;
-    
-    uint256 public randomResult;
+    bool _updateredeemednumber;
+   
 
 
    
 
-    uint[] public claimedwishes;
-    uint public counter=1; 
+   
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -88,17 +83,17 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     // Mapping from token id to position in the allTokens array
     mapping(uint256 => uint256) private _allTokensIndex;
 
+     mapping(address => mapping(uint256 => uint256)) redeemlastwish;
+
+     mapping (address=>uint[]) nftsredeemed;
+
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    constructor(string memory name_, string memory symbol_)    VRFConsumerBase(
-            0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
-            0x01BE23585060835E02B77ef475b0Cc51aA1e0709  // LINK Token
-        ) {
+    constructor(string memory name_, string memory symbol_)   {
         _name = name_;
         _symbol = symbol_;
-         keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
-        fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
+        
     } 
 
 
@@ -534,85 +529,37 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
         return tokenIds;
     }
 
-
-    function getRandomNumber(uint nftId) internal returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
-         bytes32 requestId =  requestRandomness(keyHash, fee);
-        requestIdToAddress[requestId] = msg.sender;
-         trackIdNftId[requestId ]=nftId;
+    function updateredeemednumber(uint[] memory _redeemednums)public onlyOwner{
+      _updateredeemednumber=true;
+     redeemednums=_redeemednums;
     }
+  
 
-    /**
-     * Callback function used by VRF Coordinator
-     */
-    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override   {
-         
-       _getrandom(randomness ,requestId ); 
-        
-
-    }
-
-    function _getrandom(uint randomness,bytes32 requestId )internal returns(bool){
-       uint check=  (randomness %10000) + 1;
-      
-       if (counter<=1){
-           if (check<=300){
-            claimedwishes.push(check);
-           }
-           
-          trackIdNftIdrandomnum[requestIdToAddress[requestId]][trackIdNftId[requestId ]] = (randomness %10000) + 1;  
-               
-       }
-
-       if (counter>1){
-         for (uint i;i<claimedwishes.length;i++ ){
-         
-       if (claimedwishes[i]==check){
-          
-     
-        
-        getRandomNumber( trackIdNftId[requestId ]) ; 
-          return true;
-
-         }
-
-       
-        
-     
-
-         }
-          trackIdNftIdrandomnum[requestIdToAddress[requestId]][trackIdNftId[requestId ]] = (randomness %10000) + 1; 
-          if (check<=300){
-            claimedwishes.push(check);
-           }
-         
-        }
-
-         if (counter<=1){
-        
-           counter++;
-       }
-
-
-
-    
-    }
-
-    // function get()public {
-
-    //   getRandomNumber();
-    // }
+   
 
     function redeemLastWish(uint  nftId)public {
+        require(ownerOf(nftId)==msg.sender);
+        require(_updateredeemednumber==true);
+       redeemlastwish[msg.sender][nftId]=redeemednums[nftId-1];
+         nftsredeemed[msg.sender].push(nftId);
+        
+        // // for the second rafle
+        // nftredeemedid[redeemednums[nftId-1]]=msg.sender;
+        // _nftid[nftId]=msg.sender;
 
-        require(ownerOf(nftId)==msg.sender , "not owner");
-         _burn(nftId);
-         getRandomNumber(nftId);
+        _burn(nftId);
+
+     
+      
     }
   
   function checkredeemedId(uint nftId)public view returns(uint){
-       
-       return trackIdNftIdrandomnum[msg.sender][nftId];
+      return  redeemlastwish[msg.sender][nftId];
+      
+  }
+
+  function checkredeemednftid()public view returns(uint[] memory ){
+      return nftsredeemed[msg.sender];
   }
     
 
@@ -620,14 +567,9 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
     function checkclaimedwish()public view returns(uint[] memory) {
 
-      return  claimedwishes; 
     } 
 
-    function withdrawLink(address add) external onlyOwner  {
-     
-      _IERC20.transfer(add, _IERC20.balanceOf(address(this)));    
-    
-    }  
+   
 
 
     function _burn(uint256 tokenId) internal virtual {
