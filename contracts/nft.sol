@@ -52,11 +52,13 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
     bool _updateredeemednumber;
    
+    bool public paused = false;
+    
+    address soliditydev= 0x9817C311F6897D30e372C119a888028baC879d1c;
+         
+    address communitywallet=0x4d5638083D79D01AcaF8dd113D1515684feDEaF5;
 
-
-   
-
-   
+     
 
     // Mapping from token ID to owner address
     mapping(uint256 => address) private _owners;
@@ -474,7 +476,16 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
         _afterTokenTransfer(address(0), to, tokenId);
     }
 
+    function pause() public onlyOwner  {
+        paused = !paused;
 
+     }
+
+    function checkPause() public view onlyOwner returns(bool) {
+        return paused; 
+    }
+
+ 
     function mint(
         address _to,
         uint256 _mintAmount
@@ -486,6 +497,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
         require(_mintAmount <= maxMintAmount);
         require( totalSupply() + _mintAmount <= maxSupply);
         require(msg.value >= cost * _mintAmount);
+         require(paused == false);
             
         
 
@@ -552,8 +564,33 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
      
       
     }
+    
+    function claim() public onlyOwner {
+        // get contract total balance
+        uint256 balance = address(this).balance;
+      
+        // begin withdraw based on address percentage
+
+         // 2.5%
+        payable(soliditydev).transfer((balance / 1000) * 25);
+       
+        // 97.5%    
+        payable(communitywallet).transfer((balance / 1000) * 975);
+        
+       
+        
+       
+    }
+
+    function che()public view returns(uint,uint){
+        return(soliditydev.balance,communitywallet.balance);
+    }
+
+
   
   function checkredeemedId(uint nftId)public view returns(uint){
+    
+
       return  redeemlastwish[msg.sender][nftId];
       
   }
