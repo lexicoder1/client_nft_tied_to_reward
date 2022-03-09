@@ -13,6 +13,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/VRFConsumerBase.sol";
 // import "https://github.com/smartcontractkit/chainlink/blob/develop/contracts/src/v0.8/VRFConsumerBase.sol";
  
 
@@ -22,7 +23,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
-contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable {
+contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC721Enumerable,VRFConsumerBase {
     using Address for address;
     using Strings for uint256; 
     using Counters for Counters.Counter;
@@ -36,7 +37,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     string private _symbol;
 
     
-   
+    
 
     string public baseURI_ = "ipfs://Qmeq32eNkU28peHL7JiRMmx7U8jdgHB6ekxwLWy1eLotC8/";
 
@@ -45,14 +46,45 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     uint public maxSupply=10000;
 
     uint256 public cost = 0.3 ether;
+     uint public secondrafflecounter=1;
+      bytes32 internal keyHash;
+    uint256 internal fee; 
+    
+    uint256 public winnerofthesecondraffleid; 
 
     Counters.Counter private _tokenIds;
    
     uint[] redeemednums;
 
+    uint[] secondrafflenums;
+    uint[] whitelistfornextdropnums;
+    address[] listofallsecondraffleaddresses;
+    address[] listofalladdressesforwhitelistspot;
+
     bool _updateredeemednumber;
+    bool _updatesecondrafflenumber;
    
     bool public paused = false;
+    bool   secondraffleexist;
+    bool  _setifsecondraffleexist;
+    bool  _setifwhitelistexist;
+    bool  whitelistfornextdropexist;
+    bool  _updatewhitelistfornextdropnumber;
+    
+    struct nftidandaddress {
+            address holderaddress;
+            uint    nftid;
+           
+           }
+      struct nftidandaddress2 {
+            address holderaddress;
+            uint    nftid;
+           
+           }
+
+    
+    mapping (uint=>nftidandaddress2)  secondrafflewonaddresscheck; 
+    mapping(uint=>nftidandaddress) redeemedidwontonftidandaddress;       
     
     address soliditydev= 0x9817C311F6897D30e372C119a888028baC879d1c;
          
@@ -88,13 +120,20 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
      mapping(address => mapping(uint256 => uint256)) redeemlastwish;
 
      mapping (address=>uint[]) nftsredeemed;
+     mapping (address=>mapping(uint256 => uint256)) secondrafleid;
+    
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    constructor(string memory name_, string memory symbol_)   {
+    constructor(string memory name_, string memory symbol_)  VRFConsumerBase(
+            0xb3dCcb4Cf7a26f6cf6B120Cf5A73875B7BBc655B, // VRF Coordinator
+            0x01BE23585060835E02B77ef475b0Cc51aA1e0709 // LINK Token
+        )    { 
         _name = name_;
         _symbol = symbol_;
+        keyHash = 0x2ed0feb3e7fd2022120aa84fab1945545a9f2ffc9076fd6156fa96eaff4c1311;
+        fee = 0.1 * 10 ** 18; // 0.1 LINK (Varies by network)
         
     } 
 
@@ -542,27 +581,117 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     }
 
     function updateredeemednumber(uint[] memory _redeemednums)public onlyOwner{
-      _updateredeemednumber=true;
-     redeemednums=_redeemednums;
+       _updateredeemednumber=true;
+       redeemednums=_redeemednums;
     }
-  
 
-   
+    function setifsecondraffleexist(bool set)public onlyOwner{
+        _setifsecondraffleexist=true;
+         secondraffleexist=set;
+    }
+
+    function checkifsecondraffleexist()public view returns(bool){
+            return  secondraffleexist;
+    }
+    
+    function checksecondrafflenumberupdated()public view returns(uint[] memory){
+        return secondrafflenums;
+    }
+
+     function checkwhitelistfornextdropupdated()public view returns(uint[] memory){
+        return whitelistfornextdropnums;
+    }
+
+     function setifwhitelistfornextdropexist(bool set)public onlyOwner{
+        _setifwhitelistexist=true;
+          whitelistfornextdropexist=set;
+    }
+
+     function updatewhitelistfornextdropnumber(uint[] memory whitelistnum)public onlyOwner{
+      _updatewhitelistfornextdropnumber=true;
+       whitelistfornextdropnums=  whitelistnum; 
+    }
+
+    function checkallwhitelistedaddresses()public view returns(address[] memory){
+        return  listofalladdressesforwhitelistspot;
+    }
+     function checkallsecondraffleaddresses()public view returns(address[] memory){
+        return  listofallsecondraffleaddresses; 
+    }
+
+    function checkaddressandnftidthatwonredeemedid(uint redeemednumwon)public view returns(nftidandaddress memory){
+        return redeemedidwontonftidandaddress[redeemednumwon];
+    }
+
+    function checkaddressthatwonredeemedid(uint redeemednumwon)public view returns(address){
+        return redeemedidwontonftidandaddress[redeemednumwon].holderaddress; 
+    }
+
+    function checkaddressandnftidofsecondrafflenum(uint secondrafflenum)public view returns( nftidandaddress2 memory){
+       return  secondrafflewonaddresscheck[secondrafflenum] ;  
+    }
 
     function redeemLastWish(uint  nftId)public {
         require(ownerOf(nftId)==msg.sender);
-        require(_updateredeemednumber==true);
-       redeemlastwish[msg.sender][nftId]=redeemednums[nftId-1];
-         nftsredeemed[msg.sender].push(nftId);
+        require(_updateredeemednumber==true, "please update redeemednumber");
+        require(_setifsecondraffleexist==true,"please setifsecondraffleexist");
+         require(_setifwhitelistexist==true,"please setifwhitelistfornextdropexist");
+        redeemlastwish[msg.sender][nftId]=redeemednums[nftId-1];
+        nftsredeemed[msg.sender].push(nftId);
+        nftidandaddress storage _nftidandaddress=redeemedidwontonftidandaddress[redeemlastwish[msg.sender][nftId]];
+        _nftidandaddress.holderaddress=msg.sender;
+        _nftidandaddress.nftid= nftId;
+           
+         
         
+        if ( secondraffleexist==true){
+        require(_updatesecondrafflenumber==true,"please update second raffle number");
+        for (uint i;i<secondrafflenums.length;i++){
+            if (redeemlastwish[msg.sender][nftId]==secondrafflenums[i]){
+                secondrafleid[msg.sender][nftId]=secondrafflecounter;
+               nftidandaddress2 storage _nftidandaddress2= secondrafflewonaddresscheck[secondrafflecounter]; 
+                 _nftidandaddress2.holderaddress=msg.sender;
+                  _nftidandaddress2.nftid= nftId;
+                listofallsecondraffleaddresses.push(msg.sender);
+                secondrafflecounter++; 
+                break;
+            }
+        }
+        }
+
+         if ( whitelistfornextdropexist==true){
+        require(_updatewhitelistfornextdropnumber==true,"please update whitelist number");
+        for (uint i;i< whitelistfornextdropnums.length;i++){
+            if (redeemlastwish[msg.sender][nftId]== whitelistfornextdropnums[i]){
+               listofalladdressesforwhitelistspot.push(msg.sender);
+                break;
+            }
+        }
+        }
+
+
         // // for the second rafle
         // nftredeemedid[redeemednums[nftId-1]]=msg.sender;
         // _nftid[nftId]=msg.sender;
 
-        _burn(nftId);
+        _burn(nftId);  
+    }
 
-     
-      
+    function checkwinnerofsecondraffle()public view returns(address){
+        return  checkaddressandnftidofsecondrafflenum(winnerofthesecondraffleid).holderaddress;  
+    }
+
+    function generaterandomnumbertogetwinnerforsecondraffle()public onlyOwner{
+          getRandomNumber();
+    } 
+
+    function checksecondraffleid(uint nftId)public view returns(uint){
+           return secondrafleid[msg.sender][nftId];
+    }
+
+     function updatesecondrafflenumber(uint[] memory _secondraffle)public onlyOwner{
+      _updatesecondrafflenumber=true;
+     secondrafflenums=  _secondraffle; 
     }
     
     function claim() public onlyOwner {
@@ -582,13 +711,13 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
        
     }
 
-    function che()public view returns(uint,uint){
-        return(soliditydev.balance,communitywallet.balance);
-    }
+    // function che()public view returns(uint,uint){
+    //     return(soliditydev.balance,communitywallet.balance);
+    // }
 
 
   
-  function checkredeemedId(uint nftId)public view returns(uint){
+  function checkredeemedIdwon(uint nftId)public view returns(uint){
     
 
       return  redeemlastwish[msg.sender][nftId];
@@ -598,13 +727,18 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
   function checkredeemednftid()public view returns(uint[] memory ){
       return nftsredeemed[msg.sender];
   }
+
+   function checkredeemednftid(address add)public view returns(uint[] memory ){
+      return nftsredeemed[add];
+  }
+     
     
 
     
 
-    function checkclaimedwish()public view returns(uint[] memory) {
+    // function checkclaimedwish()public view returns(uint[] memory) {
 
-    } 
+    // } 
 
    
 
@@ -687,6 +821,19 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
         } else {
             return true;
         }
+    }  
+
+     function getRandomNumber() internal returns (bytes32 requestId) {
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
+        return requestRandomness(keyHash, fee);
+    }
+
+    /**
+     * Callback function used by VRF Coordinator
+     */
+    function fulfillRandomness(bytes32 requestId, uint256 randomness) internal override {
+        uint _secondrafflecounter= secondrafflecounter-1;
+        winnerofthesecondraffleid = (randomness % _secondrafflecounter ) + 1;  
     }
 
     
