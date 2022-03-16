@@ -88,7 +88,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
     
     address soliditydev= 0x9817C311F6897D30e372C119a888028baC879d1c;
          
-    address communitywallet=0x4d5638083D79D01AcaF8dd113D1515684feDEaF5;
+    address communitywallet=0x0DBef23F605538E2145f29CadA0501E819A9BB5E;   
 
      
 
@@ -526,7 +526,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
  
     function mint(
-        address _to,
+        
         uint256 _mintAmount
         
     ) public payable {
@@ -547,7 +547,7 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
         
         for (uint256 i = 1; i <= _mintAmount; i++) {
             uint256 newTokenID = _tokenIds.current();
-            _safeMint(_to, newTokenID);
+            _safeMint(msg.sender, newTokenID); 
             _tokenIds.increment();
         }
     }
@@ -713,6 +713,10 @@ contract Thelastwish  is Context, ERC165, IERC721, IERC721Metadata, Ownable,IERC
 
     // function che()public view returns(uint,uint){
     //     return(soliditydev.balance,communitywallet.balance);
+    // }
+
+    //   function checkbalanceofcontract()public view returns(uint){
+    //     return(address(this).balance);   
     // }
 
 
